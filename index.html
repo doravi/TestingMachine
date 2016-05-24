@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Docker-selenium by elgalu</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Docker-selenium</h1>
+      <h2 class="project-tagline">Selenium in Docker with Chrome &amp; Firefox plus video recording support</h2>
+      <a href="https://github.com/elgalu/docker-selenium" class="btn">View on GitHub</a>
+      <a href="https://github.com/elgalu/docker-selenium/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/elgalu/docker-selenium/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <p><img id="header" width="760" src="./images/icons/logo_wide.jpg"></p>
+
+<h1>
+<a id="selenium-in-docker-with-chrome-and-firefox" class="anchor" href="#selenium-in-docker-with-chrome-and-firefox" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Selenium in Docker with Chrome and Firefox</h1>
+
+<p><a href="https://travis-ci.org/elgalu/docker-selenium"><img src="https://travis-ci.org/elgalu/docker-selenium.svg?branch=master" alt="Build Status"></a>
+<a href="https://gitter.im/elgalu/docker-selenium?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://badges.gitter.im/Join%20Chat.svg" alt="Gitter"></a></p>
+
+<ul>
+<li>selenium server grid with 2 nodes (chrome &amp; firefox)</li>
+<li>mkv video recording</li>
+<li>VNC access (useful for debugging the container)</li>
+<li>google-chrome-stable</li>
+<li>google-chrome-beta: no longer provided but <a href="https://github.com/elgalu/docker-selenium/releases/tag/2.47.1m">can still be found here</a>
+</li>
+<li>google-chrome-unstable: no longer provided but <a href="https://github.com/elgalu/docker-selenium/releases/tag/2.47.1m">can still be found here</a>
+</li>
+<li>firefox stable latest</li>
+<li>firefox stable <a href="https://github.com/elgalu/docker-selenium/releases/tag/2.47.1m">last 18 versions can be found here</a>
+</li>
+<li>fluxbox or openbox (lightweight window managers)</li>
+</ul>
+
+<p><img src="./images/grid_console.png" alt="docker-selenium-grid"></p>
+
+<h2 id="official">
+<a id="official-repo" class="anchor" href="#official-repo" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Official repo</h2>
+
+<p>Note <a href="https://github.com/SeleniumHQ/docker-selenium">SeleniumHQ/docker-selenium</a> project is more useful for building selenium grids while this one focuses on building disposable standalone seleniums with <a href="./docs/videos.md">video recording support</a> and both browsers on the same container. It also adds some other features like <a href="#screen-size">customizing the screen size</a> and <a href="#ssh">ssh access</a> that can be particularly useful for tunneling support.</p>
+
+<h3>
+<a id="purpose" class="anchor" href="#purpose" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Purpose</h3>
+
+<p>The purpose of this project is to have <a href="https://github.com/SeleniumHQ/selenium">Selenium</a> running as simple and as fast as possible.</p>
+
+<h3>
+<a id="alternatives" class="anchor" href="#alternatives" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Alternatives</h3>
+
+<p>If you don't require a real browser <a href="https://github.com/ariya/phantomjs">PhantomJS</a> might be enough for you.
+<a href="https://wallabyjs.com/docs/integration/electron.html">Electron</a> allows to use the latest Chromium/V8 which might be equivalent to running in Chrome however it sill needs a display so <a href="http://electron.atom.io/docs/tutorial/testing-on-headless-ci">xvfb</a> is needed. You can also use a paid service like <a href="https://saucelabs.com/selenium/selenium-grid">Sauce Labs</a> or <a href="https://www.browserstack.com/automate">BrowserStack</a>, note they offer free open source accounts and straightforward <a href="https://docs.travis-ci.com/user/sauce-connect/">integration with Travis CI</a>.
+You can also configure <a href="https://docs.travis-ci.com/user/gui-and-headless-browsers/#Using-xvfb-to-Run-Tests-That-Require-a-GUI">xvfb</a> yourself but it involves some manual steps and doesn't include video recording, nor does PhantomJS nor Electron.</p>
+
+<h3>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage</h3>
+
+<h4 id="run">
+<a id="-run" class="anchor" href="#-run" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><img width="24" src="./images/icons/logo.png"> Run</h4>
+
+<ol>
+<li>
+<p>Pull the image and run the container</p>
+
+<pre><code>docker pull elgalu/selenium:2.53.0o
+
+docker run --rm -ti --name=grid -p 4444:24444 -p 5900:25900 \
+    -e TZ="US/Pacific" -e VNC_PASSWORD=hola \
+    -v /dev/shm:/dev/shm elgalu/selenium:2.53.0o
+</code></pre>
+</li>
+<li>
+<p>Wait until the grid starts properly before starting the tests <em>(Optional but recommended)</em></p>
+
+<pre><code>docker exec grid wait_all_done 30s
+</code></pre>
+</li>
+</ol>
+
+<p>After this, <a href="https://github.com/SeleniumHQ/selenium">Selenium</a> should be up and running at <code>http://localhost:4444/wd/hub</code>. Open the url in your browser to confirm it is running.
+If you are using Mac (OSX) or <a href="https://docs.docker.com/engine/installation/windows/">Microsoft Windows</a> <code>localhost</code> won't work! Find out the correct IP through <code>boot2docker ip</code> or <code>docker-machine ip default</code>.</p>
+
+<p><strong>Notes:</strong></p>
+
+<ul>
+<li>Add <code>sudo</code> only if needed in your environment</li>
+<li>Add <code>--privileged</code> or <code>-v /dev/shm:/dev/shm</code> if you really need it. For example when <a href="https://github.com/elgalu/docker-selenium/issues/20">Chrome crashes</a> during your high gpu intensive tests.</li>
+<li>Once this <a href="https://github.com/docker/docker/pull/22719">docker feature</a> is in place <code>wait_all_done</code> won't be necessary anymore.</li>
+</ul>
+
+<h4>
+<a id="stop" class="anchor" href="#stop" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Stop</h4>
+
+<p>Shutdown gracefully</p>
+
+<pre><code>docker exec grid stop
+docker stop grid
+</code></pre>
+
+<h3>
+<a id="parallel" class="anchor" href="#parallel" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Parallel</h3>
+
+<p>This image is designed to run one test on each docker container but if you still want to run multiple tests in parallel on the same container you can still do so by increasing <code>MAX_INSTANCES</code> and <code>MAX_SESSIONS</code> which now <a href="https://github.com/elgalu/docker-selenium/blob/2.53.0k/Dockerfile#L949">defaults</a> to 1.</p>
+
+<pre><code>    docker run --rm -ti --name=grid -p 4444:24444 -p 5900:25900 \
+        -v /dev/shm:/dev/shm -e VNC_PASSWORD=hola \
+        -e MAX_INSTANCES=20 -e MAX_SESSIONS=20 \
+        elgalu/selenium:2.53.0o
+</code></pre>
+
+<p>The drawback is that all tests will run on the same desktop meaning the video recording will only capture the browser in the foreground but it's in the roadmap to make all this transparent, see issues <a href="https://github.com/elgalu/docker-selenium/issues/78">#78</a> and <a href="https://github.com/elgalu/docker-selenium/issues/77">#77</a>.</p>
+
+<p>Another problem with increasing <code>MAX_INSTANCES</code> &amp; <code>MAX_SESSIONS</code> is focus issues. So if you don't need video recording you can use the official docker selenium grid to scale up/down via docker-compose, see for example <a href="http://carlosbecker.com/posts/selenium-grid-docker-compose">this blog post</a></p>
+
+<h3>
+<a id="osx" class="anchor" href="#osx" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>OSX</h3>
+
+<p>If you are in Mac, you need to get the correct IP of the docker machine. One of these two commands should work to get it:</p>
+
+<pre><code>docker-machine ip default
+</code></pre>
+
+<p>or former:</p>
+
+<pre><code>boot2docker ip
+</code></pre>
+
+<h3>
+<a id="ssh" class="anchor" href="#ssh" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>SSH</h3>
+
+<p>You can also ssh into the machine as long as <code>SSH_AUTH_KEYS="$(cat ~/.ssh/id_rsa.pub)"</code> is correct.</p>
+
+<pre><code>docker run --rm -ti --name=grid -p=4444:24444 -p=5900:25900 -p=22222:22222 \
+  -e SSHD=true \
+  -e SSH_AUTH_KEYS="$(cat ~/.ssh/id_rsa.pub)" \
+  -v /dev/shm:/dev/shm elgalu/selenium:2.53.0o
+</code></pre>
+
+<p>Then</p>
+
+<pre><code>ssh -p 22222 -o StrictHostKeyChecking=no application@localhost
+</code></pre>
+
+<p>Include <code>-X</code> in ssh command if you want to redirect the started GUI programs to your host, but for that you also need to pass <code>-e SSHD_X11FORWARDING=yes</code></p>
+
+<pre><code>docker run --rm -ti --name=grid -p=4444:24444 -p=5900:25900 -p=22222:22222 \
+  -e SSHD=true -e SSHD_X11FORWARDING=yes \
+  -e SSH_AUTH_KEYS="$(cat ~/.ssh/id_rsa.pub)" \
+  -v /dev/shm:/dev/shm elgalu/selenium:2.53.0o
+</code></pre>
+
+<p>Then</p>
+
+<pre><code>ssh -X -p 22222 -o StrictHostKeyChecking=no application@localhost
+echo $DISPLAY #=&gt; localhost:10.0
+</code></pre>
+
+<p>That's is useful for tunneling, or else you can stick with <code>docker exec</code> to get into the instance with a shell:</p>
+
+<pre><code>docker exec -ti grid bash
+</code></pre>
+
+<p>Supervisor exposes an http server but is not enough to bind the ports via <code>docker run -p</code>, so in this case you need to FWD ports with <code>ssh -L</code></p>
+
+<pre><code>ssh -p 22222 -o StrictHostKeyChecking=no -L localhost:29001:localhost:29001 application@localhost
+</code></pre>
+
+<h3>
+<a id="screen-size" class="anchor" href="#screen-size" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Screen size</h3>
+
+<p>You can set a custom screen size at docker run time by providing <code>SCREEN_WIDTH</code> and <code>SCREEN_HEIGHT</code> environment variables:</p>
+
+<pre><code>docker pull elgalu/selenium:2.53.0o
+
+docker run -d --name=grid -p 4444:24444 -p 5900:25900 \
+  -v /dev/shm:/dev/shm -e VNC_PASSWORD=hola \
+  -e SCREEN_WIDTH=1920 -e SCREEN_HEIGHT=1480 \
+  elgalu/selenium:2.53.0o
+
+docker exec grid wait_all_done 10s
+
+open vnc://:hola@localhost:5900
+</code></pre>
+
+<h3>
+<a id="timezone" class="anchor" href="#timezone" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>TimeZone</h3>
+
+<p>You can control and modify the timezone on a container by using the <a href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones">TZ</a> environment variable through the <code>docker run</code> command, e.g. by adding <code>-e TZ="US/Pacific"</code></p>
+
+<pre><code>docker run --rm -ti --name=grid -p 4444:24444 -p 5900:25900 \
+    -e TZ="US/Pacific" -e VNC_PASSWORD=hola \
+    -v /dev/shm:/dev/shm elgalu/selenium:2.53.0o
+</code></pre>
+
+<p>Examples:</p>
+
+<pre><code>docker run ... -e TZ="US/Pacific" ...
+docker exec grid date
+#=&gt; Fri May 20 06:04:58 PDT 2016
+
+docker run ... -e TZ="America/Argentina/Buenos_Aires" ...
+docker exec grid date
+#=&gt; Fri May 20 10:04:58 ART 2016
+
+docker run ... -e TZ="Europe/Berlin" ...
+docker exec grid date
+#=&gt; Fri May 20 15:04:58 CEST 2016
+</code></pre>
+
+<h3>
+<a id="chrome-flavor" class="anchor" href="#chrome-flavor" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Chrome flavor</h3>
+
+<p>This feature was available in previous versions, please go to <a href="https://github.com/elgalu/docker-selenium/releases/tag/2.47.1m">2.47.1m</a> to use it.</p>
+
+<p>To configure which Chrome flavor you want to use (stable, beta, unstable), just pass <code>-e CHROME_FLAVOR=beta</code> to <code>docker run</code>. Default is <code>stable</code>.</p>
+
+<h3>
+<a id="firefox-version" class="anchor" href="#firefox-version" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Firefox version</h3>
+
+<p>This feature was available in previous versions, please go to <a href="https://github.com/elgalu/docker-selenium/releases/tag/2.47.1m">2.47.1m</a> to use it.
+To configure which Firefox version to use, first check available versions in the <a href="./CHANGELOG.md">CHANGELOG</a>. Then pass <code>-e FIREFOX_VERSION=38.0.6</code> to <code>docker run</code>. Default is the latest number of the available list.</p>
+
+<h3 id="video">
+<a id="record-videos" class="anchor" href="#record-videos" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Record Videos</h3>
+
+<p>Step by step guide at <a href="./docs/videos.md">docs/videos.md</a></p>
+
+<p>If you create the container with <code>-e VIDEO=true</code> it will start recording a video through the vnc connection run upon start.
+It is recommended to create first a local folder <code>videos</code> in your current directory, and mount the videos directory for
+an easy transfer with <code>-v $(pwd)/videos:/videos</code>.</p>
+
+<p>Once your tests are done you can either manually stop the recording via <code>docker exec grid /bin-utils/stop-video</code> where
+<em>grid</em> is just the arbitrary container chosen name in <code>docker run</code> command. Or simply stop the container and that will stop the video recording automatically.</p>
+
+<p>Relevant environment variables to customize it are:</p>
+
+<pre><code>FFMPEG_FRAME_RATE=25
+VIDEO_FILE_NAME="test"
+VIDEO_FILE_EXTENSION=mkv
+FFMPEG_CODEC_ARGS=""
+</code></pre>
+
+<p>It is important to note that <code>ffmpeg</code> video recording takes an important amount of CPU usage, even more when a well compressed format like <em>mkv</em> is selected. You may want to delegate video recording through <code>vnc2swf-start.sh</code> to a separate server process and even delegate compression to a further step or to a cloud service like YouTube.</p>
+
+<h3>
+<a id="vnc" class="anchor" href="#vnc" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>VNC</h3>
+
+<p>When you don't specify a VNC password, a random one will be generated. That password can be seeing by grepping the logs:</p>
+
+<pre><code>docker exec grid wait_all_done 30s
+#=&gt; ... a VNC password was generated for you: ooGhai0aesaesh
+</code></pre>
+
+<p>You can connect to see what's happening</p>
+
+<pre><code>open vnc://:ooGhai0aesaesh@localhost:5900
+</code></pre>
+
+<h3>
+<a id="novnc" class="anchor" href="#novnc" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>noVNC</h3>
+
+<p>Disabled by default, <a href="https://github.com/kanaka/noVNC">noVNC</a> provides a browser VNC client so you don't need to install a vnc viewer if you choose so. <em>Note:</em> we were using guacamole before.</p>
+
+<p>Safari Browser already comes with a built-in vnc viewer so this feature is overkill and is disabled by default, just navigate to vnc://localhost:5900 in your Safari browser.</p>
+
+<p>You need to pass the environment variable <code>-e NOVNC=true</code> in order to start the noVNC service and you will be able to open a browser at <a href="http://localhost:6080/vnc.html">localhost:6080</a></p>
+
+<pre><code>docker run --rm -ti --name=grid -p 4444:24444 -p 5900:25900 \
+  -v /dev/shm:/dev/shm -p 6080:26080 -e NOVNC=true \
+  elgalu/selenium:2.53.0o
+</code></pre>
+
+<p>If the VNC password was randomly generated find out with</p>
+
+<pre><code>docker exec grid wait_all_done 30s
+#=&gt; ... a VNC password was generated for you: ooGhai0aesaesh
+</code></pre>
+
+<h2>
+<a id="issues-with-chrome" class="anchor" href="#issues-with-chrome" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Issues with Chrome</h2>
+
+<h3>
+<a id="chrome-crashed" class="anchor" href="#chrome-crashed" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Chrome crashed</h3>
+
+<p>If your tests crashes in Chrome you may need to increase shm size or simply start your container by sharing <code>-v /dev/shm:/dev/shm</code></p>
+
+<pre><code>docker run ... -v /dev/shm:/dev/shm
+</code></pre>
+
+<p>Alternatively you can increase it inside the container:</p>
+
+<ol>
+<li>start docker in privileged mode: <code>docker run --privileged</code>
+</li>
+<li>increase shm size from default 64mb to something bigger:</li>
+</ol>
+
+<div class="highlight highlight-source-shell"><pre>docker <span class="pl-c1">exec</span> grid sudo umount /dev/shm
+docker <span class="pl-c1">exec</span> grid sudo mount -t tmpfs -o rw,nosuid,nodev,noexec,relatime,size=512M tmpfs /dev/shm</pre></div>
+
+<h3>
+<a id="chrome-not-reachable-or-timeout-after-60-secs" class="anchor" href="#chrome-not-reachable-or-timeout-after-60-secs" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Chrome not reachable or timeout after 60 secs</h3>
+
+<p>In CentOS and apparently since docker 1.10.0 is necessary to disable <a href="http://www.chromium.org/developers/design-documents/sandbox">sandbox mode</a> through <a href="http://peter.sh/experiments/chromium-command-line-switches/#no-sandbox">--no-sandbox</a> example client implementation.</p>
+
+<p>The error comes along with this message while starting Chrome:</p>
+
+<blockquote>
+<p>Failed to move to new namespace: PID namespaces supported. Network namespace supported, but failed: errno = Operation not permitted</p>
+</blockquote>
+
+<h4>
+<a id="no-sandbox" class="anchor" href="#no-sandbox" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>No Sandbox</h4>
+
+<pre><code>ChromeOptions options = new ChromeOptions();
+options.addArguments("--no-sandbox");
+</code></pre>
+
+<p>In Protrator</p>
+
+<pre><code>capabilities: {
+  browserName: 'chrome',
+  chromeOptions: {
+    args: ['--no-sandbox'],
+  },
+},
+</code></pre>
+
+<p>However this is now the default of this image, see <code>CHROME_ARGS="--no-sandbox"</code> in the Dockerfile so don't be surprised to see the "Stability and security will suffer" banner when opening Chrome inside the container.</p>
+
+<h2>
+<a id="security" class="anchor" href="#security" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Security</h2>
+
+<p>The docker images are built and pushed from <a href="https://travis-ci.org/elgalu/docker-selenium/builds/123103275">TravisCI</a> for full traceability.</p>
+
+<p>Do <strong>NOT</strong> expose your selenium grid to the outside world (e.g. in AWS), because Selenium does not provide auth. Therefore, if the ports are not firewalled malicious users will use <a href="https://github.com/SeleniumHQ/docker-selenium/issues/147">your selenium grid as a bot net</a>.</p>
+
+<p>Put that firewall stuff aside, a file <a href="./scm-source.json">scm-source.json</a> is included at the root directory of the generated image with information that helps to comply with auditing requirements to trace the creation of this docker image.</p>
+
+<p>Note <a href="./scm-source.json">scm-source.json</a> file will always be 1 commit outdated in the repo but will be correct inside the container.</p>
+
+<p>This is how the file looks like:</p>
+
+<pre><code>cat scm-source.json #=&gt; { "url": "https://github.com/elgalu/docker-selenium",
+                          "revision": "8d2e03d8b4c45c72e0c73481d5141850d54122fe",
+                          "author": "lgallucci",
+                          "status": "" }
+</code></pre>
+
+<p>There are also additional steps you can take to ensure you're using the correct image:</p>
+
+<h3>
+<a id="option-1---check-the-full-image-id" class="anchor" href="#option-1---check-the-full-image-id" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Option 1 - Check the Full Image Id</h3>
+
+<p>You can simply verify that image id is indeed the correct one.</p>
+
+<pre><code># e.g. full image id for tag 2.53.0o
+export IMGID="&lt;&lt;Please see CHANGELOG.md&gt;&gt;"
+if docker inspect -f='{{.Id}}' elgalu/selenium:2.53.0o |grep ${IMGID} &amp;&gt; /dev/null; then
+    echo "Image ID tested ok"
+else
+    echo "Image ID doesn't match"
+fi
+</code></pre>
+
+<h3>
+<a id="option-2---use-immutable-image-digests" class="anchor" href="#option-2---use-immutable-image-digests" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Option 2 - Use immutable image digests</h3>
+
+<p>Given docker.io currently allows to push the same tag image twice this represent a security concern but since docker &gt;= 1.6.2 is possible to fetch the digest sha256 instead of the tag so you can be sure you're using the exact same docker image every time:</p>
+
+<pre><code># e.g. sha256 for tag 2.53.0o
+export SHA=&lt;&lt;Please see CHANGELOG.md&gt;&gt;
+docker pull elgalu/selenium@sha256:${SHA}
+</code></pre>
+
+<p>You can find all digests sha256 and image ids per tag in the <a href="./CHANGELOG.md">CHANGELOG</a> so as of now you just need to trust the sha256 in the CHANGELOG. Bullet proof is to fork this project and build the images yourself if security is a big concern.</p>
+
+<h2>
+<a id="cloud-testing-platforms" class="anchor" href="#cloud-testing-platforms" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Cloud Testing Platforms</h2>
+
+<h3>
+<a id="sauce-labs" class="anchor" href="#sauce-labs" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Sauce Labs</h3>
+
+<p>To open the [Sauce Labs][] tunnel while starting the docker container pass in the arguments <code>-e SAUCE_TUNNEL=true -e SAUCE_USER_NAME=leo -e SAUCE_API_KEY=secret</code> that will also require the tunnel to open successfully, else the container will exit so you can be sure your tunnel is up and running before starting to test.</p>
+
+<h3>
+<a id="browserstack" class="anchor" href="#browserstack" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>BrowserStack</h3>
+
+<p>To open the <a href="https://www.browserstack.com/automate">BrowserStack</a> tunnel while starting the docker container pass in the arguments <code>-e BSTACK_TUNNEL=true -e BSTACK_ACCESS_KEY=secret</code> that will also require the tunnel to open successfully, else the container will exit so you can be sure your tunnel is up and running before starting to test.</p>
+
+<h2>
+<a id="additional-uses" class="anchor" href="#additional-uses" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Additional Uses</h2>
+
+<h3>
+<a id="using-xephyr-to-redirect-x-to-the-docker-host" class="anchor" href="#using-xephyr-to-redirect-x-to-the-docker-host" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Using Xephyr to redirect X to the docker host</h3>
+
+<p>Note the below method gives full access to the docker container to the host machine.</p>
+
+<p>Host machine, terminal 1:</p>
+
+<pre><code>sudo apt-get install xserver-xephyr
+export XE_DISP_NUM=12 SCREEN_WIDTH=2000 SCREEN_HEIGHT=1500
+Xephyr -ac -br -noreset -resizeable \
+    -screen ${SCREEN_WIDTH}x${SCREEN_HEIGHT} :${XE_DISP_NUM}
+</code></pre>
+
+<p>Host machine, terminal 2:</p>
+
+<pre><code>docker run --rm --name=ch -p=4444:24444 \
+  -v /dev/shm:/dev/shm \
+  -e SCREEN_WIDTH -e SCREEN_HEIGHT -e XE_DISP_NUM \
+  -v /tmp/.X11-unix/X${XE_DISP_NUM}:/tmp/.X11-unix/X${XE_DISP_NUM} \
+  elgalu/selenium:2.53.0o
+</code></pre>
+
+<p>Now when you run your tests instead of connecting. If docker run fails try <code>xhost +</code></p>
+
+<h3>
+<a id="using-free-available-ports-and-tunneling-to-emulate-localhost-testing" class="anchor" href="#using-free-available-ports-and-tunneling-to-emulate-localhost-testing" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Using free available ports and tunneling to emulate localhost testing</h3>
+
+<p>Let's say you need to expose 4 ports (3000, 2525, 4545, 4546) from your laptop but test on the remote docker selenium.
+Enter tunneling.</p>
+
+<div class="highlight highlight-source-shell"><pre><span class="pl-c"># -- Common: Set some handy shortcuts.</span>
+<span class="pl-c"># On development machine (target test localhost server)</span>
+SOPTS=<span class="pl-s"><span class="pl-pds">"</span>-o StrictHostKeyChecking=no<span class="pl-pds">"</span></span>
+TUNLOCOPTS=<span class="pl-s"><span class="pl-pds">"</span>-v -N <span class="pl-smi">$SOPTS</span> -L<span class="pl-pds">"</span></span>
+TUNREVOPTS=<span class="pl-s"><span class="pl-pds">"</span>-v -N <span class="pl-smi">$SOPTS</span> -R<span class="pl-pds">"</span></span>
+<span class="pl-c"># port 0 means bind to a free available port</span>
+ANYPORT=0
+
+<span class="pl-c"># -- Option 1. docker run - Running docker locally</span>
+<span class="pl-c"># Run a selenium instance binding to host random ports</span>
+REMOTE_DOCKER_SRV=localhost
+CONTAINER=<span class="pl-s"><span class="pl-pds">$(</span>docker run -d -p=0.0.0.0:<span class="pl-smi">${ANYPORT}</span>:22222 -p=0.0.0.0:<span class="pl-smi">${ANYPORT}</span>:24444 \</span>
+<span class="pl-s">    -p=0.0.0.0:<span class="pl-smi">${ANYPORT}</span>:25900 -e SCREEN_HEIGHT=1110 -e VNC_PASSWORD=hola \</span>
+<span class="pl-s">    -e SSH_AUTH_KEYS=<span class="pl-s"><span class="pl-pds">"</span><span class="pl-s"><span class="pl-pds">$(</span>cat <span class="pl-k">~</span>/.ssh/id_rsa.pub<span class="pl-pds">)</span></span><span class="pl-pds">"</span></span> elgalu/selenium:2.53.0o</span>
+<span class="pl-s"></span>
+<span class="pl-s"><span class="pl-c"># -- Option 2.docker run- Running docker on remote docker server like in the cloud</span></span>
+<span class="pl-s"><span class="pl-c"># Useful if the docker server is running in the cloud. Establish free local ports</span></span>
+<span class="pl-s">REMOTE_DOCKER_SRV=some.docker.server.com</span>
+<span class="pl-s">ssh <span class="pl-smi">${REMOTE_DOCKER_SRV}</span> <span class="pl-c">#get into the remote docker provider somehow</span></span>
+<span class="pl-s"><span class="pl-c"># Note in remote server I'm using authorized_keys instead of id_rsa.pub given</span></span>
+<span class="pl-s"><span class="pl-c"># it acts as a jump host so my public key is already on that server</span></span>
+<span class="pl-s">CONTAINER=<span class="pl-s"><span class="pl-pds">$(</span>docker run -d -p=0.0.0.0:<span class="pl-smi">${ANYPORT}</span>:22222 -e SCREEN_HEIGHT=1110 \</span></span>
+<span class="pl-s"><span class="pl-s">    -e VNC_PASSWORD=hola -e SSH_AUTH_KEYS=<span class="pl-s"><span class="pl-pds">"</span><span class="pl-s"><span class="pl-pds">$(</span>cat <span class="pl-k">~</span>/.ssh/authorized_keys<span class="pl-pds">)</span></span><span class="pl-pds">"</span></span> \</span></span>
+<span class="pl-s"><span class="pl-s">    elgalu/selenium:2.53.0o</span></span>
+<span class="pl-s"><span class="pl-s"></span></span>
+<span class="pl-s"><span class="pl-s"><span class="pl-c"># -- Common: Wait for the container to start</span></span></span>
+<span class="pl-s"><span class="pl-s">./host-scripts/wait-docker-selenium.sh grid 7s</span></span>
+<span class="pl-s"><span class="pl-s">json_filter=<span class="pl-s"><span class="pl-pds">'</span>{{(index (index .NetworkSettings.Ports "22222/tcp") 0).HostPort}}<span class="pl-pds">'</span></span></span></span>
+<span class="pl-s"><span class="pl-s">SSHD_PORT=<span class="pl-s"><span class="pl-pds">$(</span>docker inspect -f=<span class="pl-s"><span class="pl-pds">'</span>${json_filter}<span class="pl-pds">'</span></span> <span class="pl-smi">$CONTAINER</span><span class="pl-pds">)</span></span></span></span>
+<span class="pl-s"><span class="pl-s"><span class="pl-c1">echo</span> <span class="pl-smi">$SSHD_PORT</span> <span class="pl-c">#=&gt; e.g. SSHD_PORT=32769</span></span></span>
+<span class="pl-s"><span class="pl-s"></span></span>
+<span class="pl-s"><span class="pl-s"><span class="pl-c"># -- Option 1. Obtain dynamic values like container IP and assigned free ports</span></span></span>
+<span class="pl-s"><span class="pl-s">json_filter=<span class="pl-s"><span class="pl-pds">'</span>{{(index (index .NetworkSettings.Ports "24444/tcp") 0).HostPort}}<span class="pl-pds">'</span></span></span></span>
+<span class="pl-s"><span class="pl-s">FREE_SELE_PORT=<span class="pl-s"><span class="pl-pds">$(</span>docker inspect -f=<span class="pl-s"><span class="pl-pds">'</span>${json_filter}<span class="pl-pds">'</span></span> <span class="pl-smi">$CONTAINER</span><span class="pl-pds">)</span></span></span></span>
+<span class="pl-s"><span class="pl-s">json_filter=<span class="pl-s"><span class="pl-pds">'</span>{{(index (index .NetworkSettings.Ports "25900/tcp") 0).HostPort}}<span class="pl-pds">'</span></span></span></span>
+<span class="pl-s"><span class="pl-s">FREE_VNC_PORT=<span class="pl-s"><span class="pl-pds">$(</span>docker inspect -f=<span class="pl-s"><span class="pl-pds">'</span>${json_filter}<span class="pl-pds">'</span></span> <span class="pl-smi">$CONTAINER</span><span class="pl-pds">)</span></span></span></span>
+<span class="pl-s"><span class="pl-s"></span></span>
+<span class="pl-s"><span class="pl-s"><span class="pl-c"># -- Option 2. Get some free ports in current local machine. Needs python.</span></span></span>
+<span class="pl-s"><span class="pl-s"><span class="pl-c"># IMPORTANT: Go back to development machine</span></span></span>
+<span class="pl-s"><span class="pl-s">FREE_SELE_PORT=<span class="pl-s"><span class="pl-pds">$(</span>python -c <span class="pl-s"><span class="pl-pds">'</span>import socket; s=socket.socket(); \</span></span></span></span>
+<span class="pl-s"><span class="pl-s"><span class="pl-s"><span class="pl-s">    s.bind(("", 0)); print(s.getsockname()[1]); s.close()<span class="pl-pds">'</span></span><span class="pl-pds">)</span></span></span></span>
+<span class="pl-s"><span class="pl-s">FREE_VNC_PORT=<span class="pl-s"><span class="pl-pds">$(</span>python -c <span class="pl-s"><span class="pl-pds">'</span>import socket; s=socket.socket(); \</span></span></span></span>
+<span class="pl-s"><span class="pl-s"><span class="pl-s"><span class="pl-s">    s.bind(("", 0)); print(s.getsockname()[1]); s.close()<span class="pl-pds">'</span></span><span class="pl-pds">)</span></span></span></span>
+<span class="pl-s"><span class="pl-s"><span class="pl-c"># -- Option 2. Tunneling selenium+vnc is necessary if using a remote docker</span></span></span>
+<span class="pl-s"><span class="pl-s">ssh <span class="pl-smi">${TUNLOCOPTS}</span> localhost:<span class="pl-smi">${FREE_SELE_PORT}</span>:localhost:24444 \</span></span>
+<span class="pl-s"><span class="pl-s">    -p <span class="pl-smi">${SSHD_PORT}</span> application@<span class="pl-smi">${REMOTE_DOCKER_SRV}</span> <span class="pl-k">&amp;</span></span></span>
+<span class="pl-s"><span class="pl-s">LOC_TUN_SELE_PID=<span class="pl-smi">$!</span></span></span>
+<span class="pl-s"><span class="pl-s">ssh <span class="pl-smi">${TUNLOCOPTS}</span> localhost:<span class="pl-smi">${FREE_VNC_PORT}</span>:localhost:25900 \</span></span>
+<span class="pl-s"><span class="pl-s">    -p <span class="pl-smi">${SSHD_PORT}</span> application@<span class="pl-smi">${REMOTE_DOCKER_SRV}</span> <span class="pl-k">&amp;</span></span></span>
+<span class="pl-s"><span class="pl-s">LOC_TUN_VNC_PID=<span class="pl-smi">$!</span></span></span>
+<span class="pl-s"><span class="pl-s"><span class="pl-c1">echo</span> <span class="pl-smi">$FREE_SELE_PORT</span> <span class="pl-smi">$FREE_VNC_PORT</span></span></span>
+<span class="pl-s"><span class="pl-s"></span></span>
+<span class="pl-s"><span class="pl-s"><span class="pl-c"># -- Common: Expose local ports so can be tested as 'localhost'</span></span></span>
+<span class="pl-s"><span class="pl-s"><span class="pl-c"># inside the docker container</span></span></span>
+<span class="pl-s"><span class="pl-s">ssh <span class="pl-smi">${TUNREVOPTS}</span> localhost:3000:localhost:3000 \</span></span>
+<span class="pl-s"><span class="pl-s">    -p <span class="pl-smi">${SSHD_PORT}</span> application@<span class="pl-smi">${REMOTE_DOCKER_SRV}</span> <span class="pl-k">&amp;</span></span></span>
+<span class="pl-s"><span class="pl-s">REM_TUN1_PID=<span class="pl-smi">$!</span></span></span>
+<span class="pl-s"><span class="pl-s">ssh <span class="pl-smi">${TUNREVOPTS}</span> localhost:2525:localhost:2525 \</span></span>
+<span class="pl-s"><span class="pl-s">    -p <span class="pl-smi">${SSHD_PORT}</span> application@<span class="pl-smi">${REMOTE_DOCKER_SRV}</span> <span class="pl-k">&amp;</span></span></span>
+<span class="pl-s"><span class="pl-s">REM_TUN2_PID=<span class="pl-smi">$!</span></span></span>
+<span class="pl-s"><span class="pl-s">ssh <span class="pl-smi">${TUNREVOPTS}</span> localhost:4545:localhost:4545 \</span></span>
+<span class="pl-s"><span class="pl-s">    -p <span class="pl-smi">${SSHD_PORT}</span> application@<span class="pl-smi">${REMOTE_DOCKER_SRV}</span> <span class="pl-k">&amp;</span></span></span>
+<span class="pl-s"><span class="pl-s">REM_TUN3_PID=<span class="pl-smi">$!</span></span></span>
+<span class="pl-s"><span class="pl-s">ssh <span class="pl-smi">${TUNREVOPTS}</span> localhost:4546:localhost:4546 \</span></span>
+<span class="pl-s"><span class="pl-s">    -p <span class="pl-smi">${SSHD_PORT}</span> application@<span class="pl-smi">${REMOTE_DOCKER_SRV}</span> <span class="pl-k">&amp;</span></span></span>
+<span class="pl-s"><span class="pl-s">REM_TUN4_PID=<span class="pl-smi">$!</span></span></span>
+<span class="pl-s"><span class="pl-s"><span class="pl-c1">echo</span> Option 1. Should show 4 ports when doing it locally</span></span>
+<span class="pl-s"><span class="pl-s"><span class="pl-c1">echo</span> Option 2. Should show 6 ports when doing it remotely</span></span>
+<span class="pl-s"><span class="pl-s"><span class="pl-c1">echo</span> <span class="pl-smi">$REM_TUN1_PID</span> <span class="pl-smi">$REM_TUN2_PID</span> <span class="pl-smi">$REM_TUN3_PID</span> \</span></span>
+<span class="pl-s"><span class="pl-s">    <span class="pl-smi">$REM_TUN4_PID</span> <span class="pl-smi">$LOC_TUN_SELE_PID</span> <span class="pl-smi">$LOC_TUN_VNC_PID</span></span></span>
+<span class="pl-s"><span class="pl-s"><span class="pl-c"># Use the container as if selenium and VNC were running locally</span></span></span>
+<span class="pl-s"><span class="pl-s"><span class="pl-c"># thanks to ssh -L port FWD</span></span></span>
+<span class="pl-s"><span class="pl-s">google-chrome-stable \</span></span>
+<span class="pl-s"><span class="pl-s">    <span class="pl-s"><span class="pl-pds">"</span>http://localhost:<span class="pl-smi">${FREE_SELE_PORT}</span>/wd/hub/static/resource/hub.html<span class="pl-pds">"</span></span></span></span>
+<span class="pl-s"><span class="pl-s">vncv localhost:<span class="pl-smi">${FREE_VNC_PORT}</span> -Scaling=70% <span class="pl-k">&amp;</span></span></span>
+<span class="pl-s"><span class="pl-s"><span class="pl-c"># Stop all the things after your tests are done</span></span></span>
+<span class="pl-s"><span class="pl-s"><span class="pl-c1">kill</span> <span class="pl-smi">$REM_TUN1_PID</span> <span class="pl-smi">$REM_TUN2_PID</span> <span class="pl-smi">$REM_TUN3_PID</span> \</span></span>
+<span class="pl-s"><span class="pl-s">    <span class="pl-smi">$REM_TUN4_PID</span> <span class="pl-smi">$LOC_TUN_SELE_PID</span> <span class="pl-smi">$LOC_TUN_VNC_PID</span></span></span>
+<span class="pl-s"><span class="pl-s"><span class="pl-c"># if in Option 2. execute below commands inside docker</span></span></span>
+<span class="pl-s"><span class="pl-s"><span class="pl-c"># provider machine `ssh ${REMOTE_DOCKER_SRV}`</span></span></span>
+<span class="pl-s"><span class="pl-s">docker stop <span class="pl-smi">${CONTAINER}</span></span></span>
+<span class="pl-s"><span class="pl-s">docker rm <span class="pl-smi">${CONTAINER}</span></span></span></pre></div>
+
+<h2>
+<a id="step-by-step-build" class="anchor" href="#step-by-step-build" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Step by step build</h2>
+
+<h3>
+<a id="1-build-this-image" class="anchor" href="#1-build-this-image" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>1. Build this image</h3>
+
+<p>If you git clone this repo locally, i.e. cd into where the Dockerfile is, you can:</p>
+
+<pre><code>docker build -t="elgalu/docker-selenium:local" .
+</code></pre>
+
+<p>If you prefer to download the final built image from docker you can pull it, personally I always prefer to build them manually except for the base images like Ubuntu 14.04.2:</p>
+
+<pre><code>docker pull elgalu/selenium:2.53.0o
+</code></pre>
+
+<h3>
+<a id="2-use-this-image" class="anchor" href="#2-use-this-image" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>2. Use this image</h3>
+
+<h4>
+<a id="eg-spawn-a-container-for-chrome-testing" class="anchor" href="#eg-spawn-a-container-for-chrome-testing" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>e.g. Spawn a container for Chrome testing:</h4>
+
+<pre><code>CH=$(docker run --rm --name=CH -p=127.0.0.1::24444 -p=127.0.0.1::25900 \
+    -v /e2e/uploads:/e2e/uploads elgalu/docker-selenium:local)
+</code></pre>
+
+<p><em>Note:</em> <code>-v /e2e/uploads:/e2e/uploads</code> is optional in case you are testing browser uploads on your WebApp, you'll probably need to share a directory for this.</p>
+
+<p>The <code>127.0.0.1::</code> part is to avoid binding to all network interfaces, most of the time you don't need to expose the docker container like that so just <em>localhost</em> for now.</p>
+
+<p>I like to remove the containers after each e2e test with <code>--rm</code> since this docker container is not meant to preserve state, spawning a new one is less than 3 seconds. You need to think of your docker container as processes, not as running virtual machines in case you are familiar with vagrant.</p>
+
+<p>A dynamic port will be bound to the container ones, i.e.</p>
+
+<pre><code># Obtain the selenium port you'll connect to:
+docker port $CH 4444
+#=&gt; 127.0.0.1:49155
+
+# Obtain the VNC server port in case you want to look around
+docker port $CH 25900
+#=&gt; 127.0.0.1:49160
+</code></pre>
+
+<p>In case you have RealVNC binary <code>vnc</code> in your path, you can always take a look, view only to avoid messing around your tests with an unintended mouse click or keyboard.</p>
+
+<pre><code>./bin/vncview.sh 127.0.0.1:49160
+</code></pre>
+
+<h4>
+<a id="eg-spawn-a-container-for-firefox-testing" class="anchor" href="#eg-spawn-a-container-for-firefox-testing" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>e.g. Spawn a container for Firefox testing:</h4>
+
+<p>This command line is the same as for Chrome, remember that the selenium running container is able to launch either Chrome or Firefox, the idea around having 2 separate containers, one for each browser is for convenience, plus avoid certain <code>:focus</code> issues your WebApp may encounter during e2e automation.</p>
+
+<pre><code>FF=$(docker run --rm --name=ff -p=127.0.0.1::24444 -p=127.0.0.1::25900 \
+    -v /e2e/uploads:/e2e/uploads elgalu/docker-selenium:local)
+</code></pre>
+
+<h4>
+<a id="how-to-get-docker-internal-ip-through-logs" class="anchor" href="#how-to-get-docker-internal-ip-through-logs" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>How to get docker internal IP through logs</h4>
+
+<pre><code>CONTAINER_IP=$(docker logs sele10 2&gt;&amp;1 | grep "Container docker internal IP: " | sed -e 's/.*IP: //' -e 's/&lt;.*$//')
+echo ${CONTAINER_IP} #=&gt; 172.17.0.34
+</code></pre>
+
+<h4>
+<a id="look-around" class="anchor" href="#look-around" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Look around</h4>
+
+<pre><code>docker images
+#=&gt;
+
+REPOSITORY               TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
+elgalu/docker-selenium   local               eab41ff50f72        About an hour ago   931.1 MB
+ubuntu                   14.04.2             d0955f21bf24        4 weeks ago         188.3 MB
+</code></pre>
+
+<h3>
+<a id="dns" class="anchor" href="#dns" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>DNS</h3>
+
+<h4>
+<a id="how-to-share-the-host-dns" class="anchor" href="#how-to-share-the-host-dns" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>How to share the host DNS</h4>
+
+<p>By default <code>docker run</code> sets the DNS to Google ones <em>8.8.8.8 and 8.8.4.4</em> however you may need to use your own.</p>
+
+<p>First attempt is to use <code>--dns</code> option, e.g.</p>
+
+<pre><code>docker run --dns=1.1.1.1 --dns=1.1.1.2 &lt;args...&gt;
+</code></pre>
+
+<p>However this may not work for you and simply want to share the same DNS name resolution than the docker host machine, in which case you should use <code>--net=host</code> along with <code>--pid=host</code></p>
+
+<pre><code>docker run --net=host --pid=host &lt;args...&gt;
+</code></pre>
+
+<p>So <code>--pid=host</code> is included to avoid <a href="https://github.com/docker/docker/issues/5899">https://github.com/docker/docker/issues/5899</a> <code>sudo: unable to send audit message: Operation not permitted</code></p>
+
+<h2>
+<a id="who-is-using-docker-selenium" class="anchor" href="#who-is-using-docker-selenium" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Who is using docker-selenium?</h2>
+
+<ul>
+<li><a href="https://tech.zalando.com/blog/">Zalando</a></li>
+<li><a href="http://www.gizra.com/content/phantomjs-chrome-docker-selenium-standalone/">Shoov</a></li>
+<li><a href="http://blog.smaato.com/automated-end-to-end-testing-with-protractor-docker-jenkins">smaato</a></li>
+<li><a href="https://github.com/algolia/instantsearch.js/#functional-tests">Algolia</a></li>
+<li><a href="https://twitter.com/nvidia">Nvidia</a></li>
+<li>And many more! Please ping <a href="https://github.com/elgalu" class="user-mention">@elgalu</a> to add you here.</li>
+</ul>
+
+<h2>
+<a id="troubleshooting" class="anchor" href="#troubleshooting" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Troubleshooting</h2>
+
+<p>All output is sent to stdout so it can be inspected by running:</p>
+
+<div class="highlight highlight-source-shell"><pre>$ docker logs -f <span class="pl-k">&lt;</span>container-id<span class="pl-k">|</span>container-name<span class="pl-k">&gt;</span></pre></div>
+
+<p>Powered by Supervisor, the container leaves many logs;</p>
+
+<pre><code>/var/log/cont/docker-selenium-status.log
+/var/log/cont/selenium-hub-stderr.log
+/var/log/cont/selenium-hub-stdout.log
+/var/log/cont/selenium-node-chrome-stderr.log
+/var/log/cont/selenium-node-chrome-stdout.log
+/var/log/cont/selenium-node-firefox-stderr.log
+/var/log/cont/selenium-node-firefox-stdout.log
+/var/log/cont/sshd-stderr.log
+/var/log/cont/sshd-stdout.log
+/var/log/cont/supervisord.log
+/var/log/cont/video-rec-stderr.log
+/var/log/cont/video-rec-stdout.log
+/var/log/cont/vnc-stderr.log
+/var/log/cont/vnc-stdout.log
+/var/log/cont/xmanager-stderr.log
+/var/log/cont/xmanager-stdout.log
+/var/log/cont/xterm-stderr.log
+/var/log/cont/xterm-stdout.log
+/var/log/cont/xvfb-stderr.log
+/var/log/cont/xvfb-stdout.log
+</code></pre>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/elgalu/docker-selenium">Docker-selenium</a> is maintained by <a href="https://github.com/elgalu">elgalu</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
