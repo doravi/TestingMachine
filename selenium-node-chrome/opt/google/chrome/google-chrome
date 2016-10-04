@@ -1,1 +1,1 @@
-exec /opt/google/chrome/google-chrome-base $@ ${CHROME_ARGS} --host-rules="MAP localhost ${DOCKER_HOST_IP}"
+exec /opt/google/chrome/google-chrome-base $@ ${CHROME_ARGS} --host-rules="MAP localhost ${THE_DOCKER_HOST_IP}"
