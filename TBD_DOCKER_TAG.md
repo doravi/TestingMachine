@@ -3,7 +3,7 @@
  + TBD_COMMIT_MSG
  + Image tag details:
   + Selenium 2: TBD_SELENIUM_2_VERSION (TBD_SELENIUM_2_REVISION)
-  + Selenium 3: 3.0.0 (350cf60)
+  + Selenium 3: 3.0.1 (1969d75)
   + Chrome stable:  TBD_CHROME_STABLE
   + Firefox for Selenium 2: TBD_FIREFOX_FOR_SEL2
   + Firefox for Selenium 3: TBD_FIREFOX_FOR_SEL3

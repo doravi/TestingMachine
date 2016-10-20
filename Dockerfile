@@ -641,7 +641,7 @@ RUN SHA="427eb2bc6b08f788573deb91d1391d93f8b58a1b" \
 # Sauce Connect Tunneling #
 # ------------------------#
 # https://docs.saucelabs.com/reference/sauce-connect/
-ENV SAUCE_CONN_VER="sc-4.4.0-linux" \
+ENV SAUCE_CONN_VER="sc-4.4.1-linux" \
     SAUCE_CONN_DOWN_URL="https://saucelabs.com/downloads"
 RUN cd /tmp \
   && wget -nv "${SAUCE_CONN_DOWN_URL}/${SAUCE_CONN_VER}.tar.gz" \
@@ -777,7 +777,7 @@ USER ${NORMAL_USER}
 #==========
 # Selenium 3
 ENV SEL_DIRECTORY="3.0" \
-    SEL_VERSION="3.0.0"
+    SEL_VERSION="3.0.1"
 RUN  mkdir -p ${SEL_HOME} \
   && export SELBASE="https://selenium-release.storage.googleapis.com" \
   && export SELPATH="${SEL_DIRECTORY}/selenium-server-standalone-${SEL_VERSION}.jar" \
