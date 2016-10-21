@@ -1,1 +1,5 @@
-exec /opt/google/chrome/google-chrome-base $@ ${CHROME_ARGS} --host-rules="MAP localhost ${THE_DOCKER_HOST_IP}"
+if [ "${THE_DOCKER_HOST_IP}" != "" ]; then
+  CUSTOM_HOST_RULES="--host-rules=\"MAP localhost ${THE_DOCKER_HOST_IP}\""
+fi
+
+exec /opt/google/chrome/google-chrome-base $@ ${CHROME_ARGS} ${CUSTOM_HOST_RULES}
